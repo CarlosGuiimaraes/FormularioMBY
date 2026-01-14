@@ -20,3 +20,34 @@ export const loggedInUser = query({
     return user;
   },
 });
+
+/**
+ * Informações simples de autenticação para o front-end.
+ * Observação: "Anonymous" conta como autenticado, mas nós marcamos como isAnonymous.
+ */
+export const authInfo = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return {
+        isAuthenticated: false,
+        isAnonymous: false,
+        email: null as string | null,
+      };
+    }
+
+    const email = (identity.email ?? null) as string | null;
+    const token = identity.tokenIdentifier ?? "";
+
+    // Heurística robusta: usuário anônimo geralmente não tem email e/ou traz "anonymous/anon" no token
+    const isAnonymous =
+      !email || token.toLowerCase().includes("anonymous") || token.toLowerCase().includes("anon");
+
+    return {
+      isAuthenticated: true,
+      isAnonymous,
+      email,
+    };
+  },
+});
