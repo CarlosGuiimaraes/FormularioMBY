@@ -4,7 +4,7 @@ import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/FormularioMKY/",
+  base: "./",
   plugins: [
     react(),
     // Dev tools do Chef (somente em development)
