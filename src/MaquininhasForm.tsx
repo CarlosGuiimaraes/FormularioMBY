@@ -214,3 +214,99 @@ export function MaquininhasForm() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h2 className="text-xl font-semibold mb-4">Tipo de Máquina</h2>
+
+          <div className="flex gap-4 mb-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                value="pagseguro"
+                checked={formData.machineType === "pagseguro"}
+                onChange={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    machineType: "pagseguro",
+                    selectedMachine: "",
+                  }))
+                }
+              />
+              PagSeguro
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                value="subadquirente"
+                checked={formData.machineType === "subadquirente"}
+                onChange={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    machineType: "subadquirente",
+                    selectedMachine: "",
+                  }))
+                }
+              />
+              Subadquirente
+            </label>
+          </div>
+
+          <div className="space-y-3">{renderMachineOptions()}</div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h2 className="text-xl font-semibold mb-4">Pagamento</h2>
+
+          <div className="flex gap-4 mb-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                value="avista"
+                checked={formData.paymentMethod === "avista"}
+                onChange={() =>
+                  setFormData((prev) => ({ ...prev, paymentMethod: "avista" }))
+                }
+              />
+              À vista
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                value="parcelado"
+                checked={formData.paymentMethod === "parcelado"}
+                onChange={() =>
+                  setFormData((prev) => ({ ...prev, paymentMethod: "parcelado" }))
+                }
+              />
+              Parcelado (12x)
+            </label>
+          </div>
+
+          {formData.selectedMachine && (
+            <div className="p-4 bg-gray-50 rounded-md">
+              <p className="font-semibold">
+                Total: {formatBRL(totalPrice)}
+              </p>
+              {formData.paymentMethod === "parcelado" && (
+                <p className="text-sm text-gray-600 mt-1">
+                  12x de {formatBRL(installmentPrice)}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="w-full py-3 rounded-md bg-primary text-white font-semibold hover:opacity-90 transition"
+        >
+          Enviar Pedido
+        </button>
+      </form>
+    </div>
+  );
+}
