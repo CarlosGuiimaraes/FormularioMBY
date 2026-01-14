@@ -4,15 +4,21 @@ import { authTables } from "@convex-dev/auth/server";
 
 const applicationTables = {
   orders: defineTable({
+    // Vincula o pedido ao usuário autenticado (novo comportamento)
+    createdBy: v.optional(v.id("users")),
+
     customerName: v.string(),
     customerPhone: v.string(),
     customerEmail: v.optional(v.string()),
+
     machineType: v.union(v.literal("pagseguro"), v.literal("subadquirente")),
     selectedMachine: v.string(),
     quantity: v.number(),
     paymentMethod: v.union(v.literal("avista"), v.literal("parcelado")),
+
     totalPrice: v.number(),
     installmentPrice: v.optional(v.number()),
+
     status: v.union(
       v.literal("pending"),
       v.literal("sent"),
@@ -20,7 +26,7 @@ const applicationTables = {
       v.literal("cancelled")
     ),
     whatsappSent: v.boolean(),
-  }),
+  }).index("by_createdBy", ["createdBy"]),
 };
 
 export default defineSchema({
