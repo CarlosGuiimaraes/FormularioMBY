@@ -19,14 +19,12 @@ export function OrdersList({ isAdmin }: { isAdmin: boolean }) {
   const orders = useQuery(api.orders.listOrders);
   const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
 
-  const handleStatusChange = async (orderId: Id<"orders">, status: OrderStatus) => {
-    if (!isAdmin) return;
-
+  const handleStatusChange = async (orderId: Id<"orders">, newStatus: OrderStatus) => {
     try {
-      await updateOrderStatus({ orderId, status });
+      await updateOrderStatus({ orderId, status: newStatus });
       toast.success("Status atualizado.");
     } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao atualizar status.");
+      toast.error(e?.message ?? "Erro ao atualizar status.");
     }
   };
 
@@ -43,7 +41,7 @@ export function OrdersList({ isAdmin }: { isAdmin: boolean }) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h2 className="text-xl font-semibold mb-4">Pedidos Recentes</h2>
-        <p className="text-gray-600">Nenhum pedido encontrado.</p>
+        <p className="text-gray-600">Nenhum pedido ainda.</p>
       </div>
     );
   }
@@ -62,12 +60,19 @@ export function OrdersList({ isAdmin }: { isAdmin: boolean }) {
                 <div className="text-sm text-gray-600">
                   Quantidade: {order.quantity} • Pagamento: {order.paymentMethod}
                 </div>
+
                 <div className="text-sm text-gray-700 mt-1">
                   Total: <span className="font-semibold">{formatBRL(order.totalPrice)}</span>
                   {order.installmentPrice != null && order.paymentMethod === "parcelado" && (
                     <span className="text-gray-500"> (parcela: {formatBRL(order.installmentPrice)})</span>
                   )}
                 </div>
+
+                {order.deliveryAddress && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    Endereço: <span className="text-gray-800">{order.deliveryAddress}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col items-end gap-2">
@@ -79,10 +84,7 @@ export function OrdersList({ isAdmin }: { isAdmin: boolean }) {
                   <select
                     value={order.status as OrderStatus}
                     onChange={(e) =>
-                      handleStatusChange(
-                        order._id as Id<"orders">,
-                        e.target.value as OrderStatus
-                      )
+                      handleStatusChange(order._id as Id<"orders">, e.target.value as OrderStatus)
                     }
                     className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
