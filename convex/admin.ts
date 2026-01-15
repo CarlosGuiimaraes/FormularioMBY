@@ -16,14 +16,13 @@ async function requireAdmin(ctx: any) {
   const userId = await getAuthUserId(ctx);
   if (!userId) throw new Error("Não autorizado.");
 
-  const user = await ctx.db.get("users", userId);
-  const email = ((user as any)?.email as string | undefined)?.toLowerCase() ?? null;
+  const user = await ctx.db.get(userId);
+  const email = (user?.email as string | undefined)?.toLowerCase() ?? null;
 
   const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS);
   if (!email || !adminEmails.has(email)) {
     throw new Error("Acesso restrito ao administrador.");
   }
-
   return { userId, email };
 }
 
@@ -43,26 +42,25 @@ export const listAllOrders = query({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const limit = Math.min(Math.max(args.limit ?? 50, 1), 200);
+    const limit = args.limit ?? 50;
 
-    // Puxa os mais recentes (até 200) e filtra.
-    const raw = await ctx.db.query("orders").order("desc").take(200);
+    let q = ctx.db.query("orders").order("desc");
+    if (args.status) {
+      q = q.filter((f: any) => f.eq(f.field("status"), args.status));
+    }
 
-    const normalizedSearch = (args.search ?? "").trim().toLowerCase();
+    const rows = await q.take(limit);
 
-    const filtered = raw.filter((o: any) => {
-      if (args.status && o.status !== args.status) return false;
-      if (!normalizedSearch) return true;
+    // Filtro simples por texto no lado do servidor (para limitar o que vai para o client)
+    if (args.search) {
+      const s = args.search.toLowerCase();
+      return rows.filter((o: any) => {
+        const hay = `${o.customerName ?? ""} ${o.customerPhone ?? ""} ${o.customerEmail ?? ""} ${o.userEmail ?? ""} ${o.selectedMachine ?? ""}`.toLowerCase();
+        return hay.includes(s);
+      });
+    }
 
-      const haystack =
-        `${o.customerName ?? ""} ${o.customerPhone ?? ""} ${o.customerEmail ?? ""} ${o.selectedMachine ?? ""} ${o.machineType ?? ""}`
-          .toLowerCase()
-          .trim();
-
-      return haystack.includes(normalizedSearch);
-    });
-
-    return filtered.slice(0, limit);
+    return rows;
   },
 });
 
@@ -82,8 +80,7 @@ export const updateAnyOrderStatus = mutation({
     const existing = await ctx.db.get(args.orderId);
     if (!existing) throw new Error("Pedido não encontrado.");
 
-    await ctx.db.patch(args.orderId, {
-      status: args.status,
-    });
+    await ctx.db.patch(args.orderId, { status: args.status });
+    return { ok: true };
   },
 });
