@@ -82,9 +82,9 @@ const pagSeguroMachines: MachineOption[] = [
 
 const subMachines: MachineOption[] = [
   {
-    name: "POS A960",
+    name: "A960",
     price: 826.0,
-    installmentPrice: 69.0,
+    installmentPrice: 68.83,
     installments: 12,
   },
   {
