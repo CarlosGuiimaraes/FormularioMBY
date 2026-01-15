@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Authenticated, Unauthenticated } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { SignInForm } from "./SignInForm";
 import { MaquininhasForm } from "./MaquininhasForm";
 import { OrdersList } from "./OrdersList";
@@ -9,6 +10,7 @@ import { AdminPanel } from "./AdminPanel";
 export default function App() {
   const authInfo = useQuery(api.auth.authInfo);
   const loggedInUser = useQuery(api.users.getMe);
+  const { signOut } = useAuthActions();
 
   const isAdmin = !!authInfo?.isAdmin;
 
@@ -32,7 +34,7 @@ export default function App() {
             <Authenticated>
               <button
                 className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50"
-                onClick={() => authInfo?.signOut?.()}
+                onClick={() => void signOut()}
               >
                 Sign out
               </button>
@@ -45,9 +47,7 @@ export default function App() {
         <Unauthenticated>
           <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm border">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Pedido de Maquininhas</h1>
-            <p className="text-gray-600 mb-6">
-              Faça login para acessar o formulário.
-            </p>
+            <p className="text-gray-600 mb-6">Faça login para acessar o formulário.</p>
             <SignInForm />
           </div>
         </Unauthenticated>
