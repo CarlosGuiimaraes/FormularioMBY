@@ -18,7 +18,11 @@ export default function App() {
     <div className="min-h-screen bg-[#0b0c10] text-white">
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+        {/*
+          Força a experiência "tablet" em monitores: limita a largura do conteúdo e evita
+          grids de desktop que comprimem o layout e causam overflow nos valores.
+        */}
+        <div className="mx-auto w-full max-w-[920px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-8 w-8 rounded-xl bg-primary/25 border border-primary/30" />
             <div className="min-w-0">
@@ -46,7 +50,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-10">
+      {/* Conteúdo com largura "tablet" fixa */}
+      <main className="mx-auto w-full max-w-[920px] px-4 py-10">
         <Unauthenticated>
           <div className="max-w-md mx-auto bg-white/5 p-6 rounded-2xl border border-white/10">
             <h1 className="text-2xl font-semibold mb-2">Acesso</h1>
@@ -76,17 +81,10 @@ export default function App() {
             </section>
           )}
 
-          {/* Landing layout: form + sidebar */}
-          <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-7">
-              <MaquininhasForm />
-            </div>
-
-            <div className="lg:col-span-5">
-              <div className="lg:sticky lg:top-20">
-                <OrdersList isAdmin={isAdmin} />
-              </div>
-            </div>
+          {/* Sempre em coluna única (como tablet) */}
+          <section className="space-y-6">
+            <MaquininhasForm />
+            <OrdersList isAdmin={isAdmin} />
           </section>
         </Authenticated>
       </main>
