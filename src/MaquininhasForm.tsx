@@ -612,7 +612,7 @@ export function MaquininhasForm() {
                     <span className="text-sm text-white/60 whitespace-nowrap flex-shrink-0">
                       {totals.installments}x sem juros
                     </span>
-                    <span className="min-w-0 text-right font-semibold text-green-500 tabular-nums whitespace-nowrap text-xl lg:text-2xl">
+                    <span className="min-w-0 text-right font-semibold text-green-500 tabular-nums whitespace-nowrap text-xl">
                       {formatBRL(totals.totalInstallment ?? 0)}
                     </span>
                   </div>
