@@ -15,63 +15,85 @@ export default function App() {
   const isAdmin = !!authInfo?.isAdmin;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-primary">Pedido de Maquininhas</h2>
+    <div className="min-h-screen bg-[#0b0c10] text-white">
+      {/* Top bar */}
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-8 w-8 rounded-xl bg-primary/25 border border-primary/30" />
+            <div className="min-w-0">
+              <div className="font-semibold tracking-tight truncate">Pedido de Maquininhas</div>
+              <div className="text-xs text-white/60 truncate">
+                {loggedInUser?.email ?? authInfo?.email ?? ""}
+              </div>
+            </div>
 
             {isAdmin && (
-              <div className="hidden sm:flex items-center gap-2 ml-4">
-                <span className="text-xs px-2 py-1 rounded bg-primary/10 text-primary font-medium">
-                  ADM
-                </span>
-              </div>
+              <span className="ml-2 hidden sm:inline-flex text-[11px] px-2 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary">
+                Admin
+              </span>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <Authenticated>
-              <button
-                className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50"
-                onClick={() => void signOut()}
-              >
-                Sign out
-              </button>
-            </Authenticated>
-          </div>
+          <Authenticated>
+            <button
+              className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm"
+              onClick={() => void signOut()}
+            >
+              Sair
+            </button>
+          </Authenticated>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-10">
+      <main className="mx-auto max-w-7xl px-4 py-10">
         <Unauthenticated>
-          <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm border">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Pedido de Maquininhas</h1>
-            <p className="text-gray-600 mb-6">Faça login para acessar o formulário.</p>
+          <div className="max-w-md mx-auto bg-white/5 p-6 rounded-2xl border border-white/10">
+            <h1 className="text-2xl font-semibold mb-2">Acesso</h1>
+            <p className="text-white/70 mb-6">Faça login para enviar o pedido.</p>
             <SignInForm />
           </div>
         </Unauthenticated>
 
         <Authenticated>
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-primary mb-3">Pedido de Maquininhas</h1>
-            <p className="text-lg text-gray-600">
-              Bem-vindo, {loggedInUser?.email ?? authInfo?.email ?? "usuário"}!
-            </p>
-          </div>
+          {/* Hero */}
+          <section className="mb-8">
+            <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-8">
+              <div className="max-w-3xl">
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+                  Solicitação de Maquininhas
+                </h1>
+                <p className="mt-3 text-white/70">
+                  Preencha os dados, escolha o modelo e finalize. O total (à vista ou parcelado) é calculado em tempo real.
+                </p>
+              </div>
+            </div>
+          </section>
 
           {isAdmin && (
-            <div className="mb-8">
+            <section className="mb-8">
               <AdminPanel />
-            </div>
+            </section>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <MaquininhasForm />
-            <OrdersList isAdmin={isAdmin} />
-          </div>
+          {/* Landing layout: form + sidebar */}
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-7">
+              <MaquininhasForm />
+            </div>
+
+            <div className="lg:col-span-5">
+              <div className="lg:sticky lg:top-20">
+                <OrdersList isAdmin={isAdmin} />
+              </div>
+            </div>
+          </section>
         </Authenticated>
       </main>
+
+      <footer className="border-t border-white/10 py-6 text-center text-xs text-white/50">
+        Make Your Bank • Formulário interno
+      </footer>
     </div>
   );
 }
