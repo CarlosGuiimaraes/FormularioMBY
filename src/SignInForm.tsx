@@ -60,7 +60,7 @@ export function SignInForm() {
             className="text-primary hover:text-primary-hover hover:underline font-medium cursor-pointer"
             onClick={() => setFlow(flow === "signIn" ? "signUp" : "signIn")}
           >
-            {flow === "signIn" ? "Sign up instead" : "Sign in instead"}
+            {flow === "Entrar" ? "Inscreva-se em vez disso" : "Em vez disso, faça login"}
           </button>
         </div>
       </form>
