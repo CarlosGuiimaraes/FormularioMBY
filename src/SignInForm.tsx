@@ -20,12 +20,12 @@ export function SignInForm() {
           void signIn("password", formData).catch((error) => {
             let toastTitle = "";
             if (error.message.includes("Invalid password")) {
-              toastTitle = "Invalid password. Please try again.";
+              toastTitle = "Senha inválida. Tente novamente.";
             } else {
               toastTitle =
                 flow === "signIn"
-                  ? "Could not sign in, did you mean to sign up?"
-                  : "Could not sign up, did you mean to sign in?";
+                  ? "Não foi possível efetuar o login. Você queria se cadastrar?"
+                  : "Não foi possível se cadastrar. Você queria fazer login?";
             }
             toast.error(toastTitle);
             setSubmitting(false);
@@ -52,8 +52,8 @@ export function SignInForm() {
         <div className="text-center text-sm text-secondary">
           <span>
             {flow === "signIn"
-              ? "Don't have an account? "
-              : "Already have an account? "}
+              ? "Não tem uma conta? "
+              : "Já tem uma conta? "}
           </span>
           <button
             type="button"
