@@ -11,6 +11,7 @@
     "lint": "tsc -p convex -noEmit --pretty false && tsc -p . -noEmit --pretty false && convex dev --once && vite build"
   },
   "dependencies": {
+    "googleapis": "^10.5.0"
     "@convex-dev/auth": "^0.0.80",
     "@auth/core": "^0.37.0",
     "@oslojs/crypto": "1.0.1",
