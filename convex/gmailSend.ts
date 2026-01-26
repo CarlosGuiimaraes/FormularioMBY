@@ -50,11 +50,9 @@ export const sendResetCodeEmail = action({
       text,
     ].join("\r\n");
 
-    const raw = toBase64Url(rawMessage);
-
     await gmail.users.messages.send({
       userId: "me",
-      requestBody: { raw },
+      requestBody: { raw: toBase64Url(rawMessage) },
     });
 
     return { ok: true };
