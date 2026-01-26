@@ -1,13 +1,13 @@
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { query } from "./_generated/server";
-import { ResendOTPPasswordReset } from "./ResendOTPPasswordReset";
+import { GmailOTPPasswordReset } from "./GmailOTPPasswordReset";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   // Login anônimo removido
   providers: [
     Password({
-      reset: ResendOTPPasswordReset,
+      reset: GmailOTPPasswordReset,
     }),
   ],
 });
