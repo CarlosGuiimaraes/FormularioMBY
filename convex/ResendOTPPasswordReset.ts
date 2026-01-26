@@ -26,9 +26,19 @@ export const ResendOTPPasswordReset = Resend({
   },
 
   async sendVerificationRequest({ identifier: email, provider, token }) {
-    const resend = new ResendAPI(provider.apiKey);
-    const from = process.env.AUTH_EMAIL_FROM ?? "MKY <onboarding@resend.dev>";
+    // 1) Validações explícitas para facilitar diagnóstico
+    const apiKey = provider.apiKey ?? process.env.AUTH_RESEND_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "AUTH_RESEND_KEY não configurada no ambiente do Convex. " +
+          "Defina via `npx convex env set AUTH_RESEND_KEY <SUA_CHAVE>` (dev/prod conforme o deployment)."
+      );
+    }
 
+    const from = process.env.AUTH_EMAIL_FROM ?? "MKY <onboarding@resend.dev>";
+    const resend = new ResendAPI(apiKey);
+
+    // 2) Envio do e-mail com mensagem de erro detalhada
     const { error } = await resend.emails.send({
       from,
       to: [email],
@@ -40,7 +50,16 @@ export const ResendOTPPasswordReset = Resend({
     });
 
     if (error) {
-      throw new Error("Falha ao enviar o e-mail de redefinição.");
+      // Resend devolve uma estrutura com `message` e, por vezes, `name`/`statusCode`.
+      // Fazemos log para inspecionar no painel/logs do Convex.
+      console.error("[ResendOTPPasswordReset] Resend error:", error);
+      const details =
+        (error as any)?.message ??
+        (error as any)?.name ??
+        JSON.stringify(error);
+      throw new Error(
+        "Falha ao enviar o e-mail de redefinição via Resend: " + details
+      );
     }
   },
 });
