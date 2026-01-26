@@ -1,21 +1,11 @@
 "use node";
 
-import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 import { google } from "googleapis";
+import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
-/**
- * Provider de reset de senha via Gmail API (OAuth2 refresh token).
- *
- * Requer no Convex Environment Variables:
- * - GMAIL_CLIENT_ID
- * - GMAIL_CLIENT_SECRET
- * - GMAIL_REFRESH_TOKEN
- * - GMAIL_SENDER_EMAIL
- */
 export const GmailOTPPasswordReset = {
-  // Campos exigidos pelo modelo de provider do Auth.js (o erro TS2322 era sobre isso)
   id: "gmail-otp-reset",
-  type: "email",
+  type: "email" as const,
   name: "Gmail OTP Reset",
 
   async generateVerificationToken() {
@@ -24,18 +14,17 @@ export const GmailOTPPasswordReset = {
         crypto.getRandomValues(bytes);
       },
     };
+
+    // 6 dígitos numéricos
     return generateRandomString(random, "0123456789", 6);
   },
 
-  // O Auth.js passa { identifier, token, provider }
   async sendVerificationRequest({
     identifier: email,
     token,
-    provider,
   }: {
     identifier: string;
     token: string;
-    provider: any;
   }) {
     const clientId = process.env.GMAIL_CLIENT_ID;
     const clientSecret = process.env.GMAIL_CLIENT_SECRET;
@@ -44,19 +33,12 @@ export const GmailOTPPasswordReset = {
 
     if (!clientId || !clientSecret || !refreshToken || !sender) {
       throw new Error(
-        "Gmail OTP: variáveis ausentes. Defina GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN e GMAIL_SENDER_EMAIL no Convex."
+        "Gmail OTP: variáveis ausentes. Defina GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN e GMAIL_SENDER_EMAIL."
       );
     }
 
-    // REDUNDÂNCIA defensiva: se futuramente você quiser colocar clientId/clientSecret dentro do provider,
-    // isso também funcionará.
-    const effectiveClientId = provider?.clientId ?? clientId;
-    const effectiveClientSecret = provider?.clientSecret ?? clientSecret;
-
-    const oauth2Client = new google.auth.OAuth2(
-      effectiveClientId,
-      effectiveClientSecret
-    );
+    // OAuth2 via refresh_token (sem redirect_uri)
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
     oauth2Client.setCredentials({ refresh_token: refreshToken });
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
@@ -89,14 +71,13 @@ export const GmailOTPPasswordReset = {
         requestBody: { raw },
       });
     } catch (err: any) {
-      console.error(
-        "[GmailOTPPasswordReset] Gmail API error:",
-        err?.response?.data ?? err
-      );
       const details =
         err?.response?.data?.error?.message ??
+        err?.response?.data?.error_description ??
         err?.message ??
         "Erro desconhecido ao enviar via Gmail API";
+
+      console.error("[GmailOTPPasswordReset] Gmail API error:", err?.response?.data ?? err);
       throw new Error("Falha ao enviar e-mail via Gmail API: " + details);
     }
   },
