@@ -4,7 +4,6 @@ import { query } from "./_generated/server";
 import { GmailOTPPasswordReset } from "./GmailOTPPasswordReset";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  // Login anônimo removido
   providers: [
     Password({
       reset: GmailOTPPasswordReset,
@@ -37,7 +36,8 @@ export const authInfo = query({
     }
 
     const user = await ctx.db.get("users", userId);
-    const email = ((user as any)?.email as string | undefined)?.toLowerCase() ?? null;
+    const email =
+      ((user as any)?.email as string | undefined)?.toLowerCase() ?? null;
 
     const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS);
     const isAdmin = !!email && adminEmails.has(email);
