@@ -36,4 +36,3 @@ return {
   email: null,
   userId: null,
 };
-});
