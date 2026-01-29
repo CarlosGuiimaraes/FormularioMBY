@@ -1,11 +1,51 @@
-"use node";
-
-import { google } from "googleapis";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
+
+function base64UrlEncode(str: string) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  // btoa existe no runtime do Convex (web-like). Se falhar, te passo fallback.
+  const base64 = btoa(binary);
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+async function getAccessToken() {
+  const clientId = process.env.GMAIL_CLIENT_ID;
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      "Gmail OTP: variáveis ausentes. Defina GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET e GMAIL_REFRESH_TOKEN no Convex."
+    );
+  }
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+    grant_type: "refresh_token",
+  });
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  const json = await res.json().catch(() => ({} as any));
+  if (!res.ok || !json.access_token) {
+    throw new Error(
+      `Gmail OTP: falha ao obter access_token (${res.status}). ${JSON.stringify(json).slice(0, 300)}`
+    );
+  }
+
+  return json.access_token as string;
+}
 
 export const GmailOTPPasswordReset = {
   id: "gmail-otp-reset",
-  type: "email" as const, // <- ESSENCIAL (não pode ser string genérico)
+  type: "email" as const,
   name: "Gmail OTP Reset",
 
   async generateVerificationToken() {
@@ -25,21 +65,14 @@ export const GmailOTPPasswordReset = {
     token: string;
     provider?: unknown;
   }) {
-    const clientId = process.env.GMAIL_CLIENT_ID;
-    const clientSecret = process.env.GMAIL_CLIENT_SECRET;
-    const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
     const sender = process.env.GMAIL_SENDER_EMAIL;
-
-    if (!clientId || !clientSecret || !refreshToken || !sender) {
+    if (!sender) {
       throw new Error(
-        "Gmail OTP: variáveis ausentes. Defina GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN e GMAIL_SENDER_EMAIL no Convex."
+        "Gmail OTP: variável ausente. Defina GMAIL_SENDER_EMAIL no Convex."
       );
     }
 
-    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-    oauth2Client.setCredentials({ refresh_token: refreshToken });
-
-    const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+    const accessToken = await getAccessToken();
 
     const subject = "Redefinição de senha — Make Your Bank";
     const text =
@@ -57,15 +90,25 @@ export const GmailOTPPasswordReset = {
       text,
     ].join("\r\n");
 
-    const raw = Buffer.from(rawMessage)
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
+    const raw = base64UrlEncode(rawMessage);
 
-    await gmail.users.messages.send({
-      userId: "me",
-      requestBody: { raw },
-    });
+    const sendRes = await fetch(
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ raw }),
+      }
+    );
+
+    if (!sendRes.ok) {
+      const errText = await sendRes.text().catch(() => "");
+      throw new Error(
+        `Gmail OTP: falha ao enviar e-mail (${sendRes.status}). ${errText.slice(0, 400)}`
+      );
+    }
   },
 };
