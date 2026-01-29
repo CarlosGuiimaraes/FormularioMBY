@@ -29,12 +29,12 @@ function parseAdminEmails(raw?: string | null): Set<string> {
     const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS);
     const isAdmin = !!email && adminEmails.has(email);
 
-    return {
-      isAuthenticated: true,
-      isAnonymous: false,
-      isAdmin,
-      email,
-      userId: userId.toString(),
-    };
+return {
+  isAuthenticated: false,
+  isAnonymous: false,
+  isAdmin: false,
+  email: null,
+  userId: null,
+};
   },
 });
