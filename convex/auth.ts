@@ -22,20 +22,6 @@ function parseAdminEmails(raw?: string | null): Set<string> {
   );
 }
 
-export const authInfo = query({
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-
-    if (!userId) {
-      return {
-        isAuthenticated: false,
-        isAnonymous: false,
-        isAdmin: false,
-        email: null as string | null,
-        userId: null as string | null,
-      };
-    }
-
     const user = await ctx.db.get("users", userId);
     const email =
       ((user as any)?.email as string | undefined)?.toLowerCase() ?? null;
