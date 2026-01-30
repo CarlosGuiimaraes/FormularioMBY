@@ -36,6 +36,12 @@ function clampQty(n: number) {
   return Math.min(Math.max(Math.trunc(n), 1), 1000);
 }
 
+function clampInstallments(n: number) {
+  if (!Number.isFinite(n)) return 12;
+  const v = Math.trunc(n);
+  return Math.min(Math.max(v, 2), 12);
+}
+
 function getUnitPrice(machine: MachineOption, quantity: number): number {
   if (machine.tiers?.length) {
     const q = clampQty(quantity);
@@ -119,6 +125,7 @@ export function MaquininhasForm() {
     selectedMachine: "",
     quantity: 1,
     paymentMethod: "avista" as "avista" | "parcelado",
+    installments: 12,
   });
 
   // Para não sobrescrever edições manuais após ViaCEP
@@ -141,6 +148,7 @@ export function MaquininhasForm() {
   );
 
   const qty = clampQty(formData.quantity);
+  const installmentsChosen = clampInstallments(formData.installments ?? 12);
 
   const totals = useMemo(() => {
     if (!selectedMachine) {
@@ -155,12 +163,14 @@ export function MaquininhasForm() {
     const unitPrice = getUnitPrice(selectedMachine, qty);
     const totalAvista = unitPrice * qty;
 
-    const installments = selectedMachine.installments ?? 12;
-    const unitInstallment = getUnitInstallment(selectedMachine, qty);
+    const installments = formData.paymentMethod === "parcelado" ? installmentsChosen : (selectedMachine.installments ?? 12);
+    const unitInstallment = formData.paymentMethod === "parcelado"
+      ? (unitPrice / installments)
+      : getUnitInstallment(selectedMachine, qty);
     const totalInstallment = unitInstallment != null ? unitInstallment * qty : undefined;
 
     return { unitPrice, totalAvista, installments, unitInstallment, totalInstallment };
-  }, [selectedMachine, qty]);
+  }, [selectedMachine, qty, formData.paymentMethod, installmentsChosen]);
 
   // CEP -> ViaCEP (auto-preenche rua/bairro/cidade/uf/complemento quando possível)
   useEffect(() => {
@@ -270,6 +280,7 @@ export function MaquininhasForm() {
         quantity: qty,
 
         paymentMethod: formData.paymentMethod,
+        installments: formData.paymentMethod === "parcelado" ? installmentsChosen : undefined,
         totalPrice,
         installmentPrice: unitInstallment, // parcela unitária
       });
@@ -295,6 +306,7 @@ export function MaquininhasForm() {
         selectedMachine: "",
         quantity: 1,
         paymentMethod: "avista",
+        installments: 12,
       });
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao enviar pedido.", { id: sendingId });
@@ -404,22 +416,6 @@ export function MaquininhasForm() {
                   onChange={(e) => setFormData((p) => ({ ...p, customerEmail: e.target.value }))}
                   className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="email@exemplo.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-white/80 mb-2">
-                  Quantidade <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={1000}
-                  value={formData.quantity}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, quantity: clampQty(Number(e.target.value)) }))
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 tabular-nums"
                 />
               </div>
 
@@ -556,7 +552,21 @@ export function MaquininhasForm() {
                 PagSeguro
               </label>
 
-              <span className="text-xs text-white/50 tabular-nums">Quantidade: {qty}</span>
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-white/60 whitespace-nowrap">
+                  Quantidade <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={formData.quantity}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, quantity: clampQty(Number(e.target.value)) }))
+                  }
+                  className="w-28 rounded-xl border border-white/10 bg-black/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 tabular-nums"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -589,6 +599,28 @@ export function MaquininhasForm() {
                 Parcelado (até 12x)
               </label>
             </div>
+
+            {formData.paymentMethod === "parcelado" && (
+              <div className="mb-4 flex items-center gap-3">
+                <label className="text-sm text-white/80 whitespace-nowrap">
+                  Parcelas <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={installmentsChosen}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, installments: clampInstallments(Number(e.target.value)) }))
+                  }
+                  className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {Array.from({ length: 11 }, (_, i) => i + 2).map((n) => (
+                    <option key={n} value={n}>
+                      {n}x
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-white/50">sem juros</span>
+              </div>
+            )}
 
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4 overflow-hidden">
               {!selectedMachine ? (
