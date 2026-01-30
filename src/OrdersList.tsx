@@ -9,10 +9,11 @@ const formatBRL = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const statusLabel: Record<OrderStatus, string> = {
-  pending: "Pendente",
-  sent: "Enviado",
-  completed: "Concluído",
-  cancelled: "Cancelado",
+    pending: "Aguardando Pagamento",
+    sent: "Pago",
+    sent: "Enviado",
+    completed: "Concluído",
+    cancelled: "Cancelado",
 };
 
 export function OrdersList({ isAdmin }: { isAdmin: boolean }) {
@@ -112,10 +113,12 @@ export function OrdersList({ isAdmin }: { isAdmin: boolean }) {
                     className="text-xs px-2 py-1 rounded-lg border border-white/10 bg-black/30 text-white
                                focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
-                    <option value="pending">Pendente</option>
-                    <option value="sent">Enviado</option>
-                    <option value="completed">Concluído</option>
-                    <option value="cancelled">Cancelado</option>
+            <option value="pending">Aguardando Pagamento</option>
+            <option value="sent">Pago</option>
+            <option value="sent">Enviado</option>
+            <option value="completed">Concluído</option>
+            <option value="cancelled">Cancelado</option>
+                    
                   </select>
                 )}
               </div>
