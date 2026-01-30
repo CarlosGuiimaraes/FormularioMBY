@@ -87,6 +87,12 @@ export function OrdersList({ isAdmin }: { isAdmin: boolean }) {
                     Endereço: <span className="text-white/90">{order.deliveryAddress}</span>
                   </div>
                 )}
+
+                {order.machineType === "pagseguro" && order.pagSeguroEmail && (
+                  <div className="text-sm text-white/70 mt-1 break-words">
+                    E-mail PagSeguro: <span className="text-white/90">{order.pagSeguroEmail}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col items-end gap-2 flex-shrink-0">
