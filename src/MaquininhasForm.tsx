@@ -76,9 +76,7 @@ const subMachines: MachineOption[] = [
   { name: "POS A960", price: 826.0, installmentPrice: 69.0, installments: 12 },
   {
     name: "S920",
-    tiers: [
-      { min: 1, max: 10, unitPrice: 245.0 },
-    ],
+    tiers: [{ min: 1, max: 10, unitPrice: 245.0 }],
     installments: 12,
     allowAutoInstallment: true, // parcela calculada (sem juros)
   },
@@ -111,6 +109,9 @@ export function MaquininhasForm() {
     customerName: "",
     customerPhone: "",
     customerEmail: "",
+
+    // Obrigatório apenas quando escolher PagSeguro
+    pagSeguroEmail: "",
 
     // Endereço em campos
     deliveryCep: "",
@@ -163,10 +164,16 @@ export function MaquininhasForm() {
     const unitPrice = getUnitPrice(selectedMachine, qty);
     const totalAvista = unitPrice * qty;
 
-    const installments = formData.paymentMethod === "parcelado" ? installmentsChosen : (selectedMachine.installments ?? 12);
-    const unitInstallment = formData.paymentMethod === "parcelado"
-      ? (unitPrice / installments)
-      : getUnitInstallment(selectedMachine, qty);
+    const installments =
+      formData.paymentMethod === "parcelado"
+        ? installmentsChosen
+        : selectedMachine.installments ?? 12;
+
+    const unitInstallment =
+      formData.paymentMethod === "parcelado"
+        ? unitPrice / installments
+        : getUnitInstallment(selectedMachine, qty);
+
     const totalInstallment = unitInstallment != null ? unitInstallment * qty : undefined;
 
     return { unitPrice, totalAvista, installments, unitInstallment, totalInstallment };
@@ -198,15 +205,19 @@ export function MaquininhasForm() {
 
         setFormData((p) => ({
           ...p,
-          deliveryStreet: editedRef.current.street ? p.deliveryStreet : (data.logradouro ?? p.deliveryStreet ?? ""),
+          deliveryStreet: editedRef.current.street
+            ? p.deliveryStreet
+            : data.logradouro ?? p.deliveryStreet ?? "",
           deliveryNeighborhood: editedRef.current.neighborhood
             ? p.deliveryNeighborhood
-            : (data.bairro ?? p.deliveryNeighborhood ?? ""),
-          deliveryCity: editedRef.current.city ? p.deliveryCity : (data.localidade ?? p.deliveryCity ?? ""),
-          deliveryState: editedRef.current.state ? p.deliveryState : (data.uf ?? p.deliveryState ?? ""),
+            : data.bairro ?? p.deliveryNeighborhood ?? "",
+          deliveryCity: editedRef.current.city
+            ? p.deliveryCity
+            : data.localidade ?? p.deliveryCity ?? "",
+          deliveryState: editedRef.current.state ? p.deliveryState : data.uf ?? p.deliveryState ?? "",
           deliveryComplement: editedRef.current.complement
             ? p.deliveryComplement
-            : (data.complemento ?? p.deliveryComplement ?? ""),
+            : data.complemento ?? p.deliveryComplement ?? "",
         }));
       } catch {
         toast.error("Não foi possível consultar o CEP agora.");
@@ -222,6 +233,11 @@ export function MaquininhasForm() {
   const validate = () => {
     if (!formData.customerName.trim()) return "Informe o nome completo.";
     if (!formData.customerPhone.trim()) return "Informe o telefone.";
+
+    // Se escolheu PagSeguro, exige o e-mail específico do PagSeguro
+    if (formData.machineType === "pagseguro" && !formData.pagSeguroEmail.trim()) {
+      return "Informe o e-mail PagSeguro.";
+    }
 
     if (onlyDigits(formData.deliveryCep).length !== 8) return "Informe um CEP válido (8 dígitos).";
     if (!formData.deliveryStreet.trim()) return "Informe a rua.";
@@ -272,6 +288,11 @@ export function MaquininhasForm() {
         customerPhone: formData.customerPhone.trim(),
         customerEmail: formData.customerEmail.trim() ? formData.customerEmail.trim() : undefined,
 
+        pagSeguroEmail:
+          formData.machineType === "pagseguro" && formData.pagSeguroEmail.trim()
+            ? formData.pagSeguroEmail.trim()
+            : undefined,
+
         // mantém compatibilidade com seu schema atual
         deliveryAddress: buildDeliveryAddressString(),
 
@@ -293,6 +314,8 @@ export function MaquininhasForm() {
         customerName: "",
         customerPhone: "",
         customerEmail: "",
+
+        pagSeguroEmail: "",
 
         deliveryCep: "",
         deliveryStreet: "",
@@ -332,12 +355,7 @@ export function MaquininhasForm() {
             : "border-white/10",
         ].join(" ")}
       >
-        {/*
-          Layout do card pensado para não "repetir" valor (principalmente quando qty=1)
-          e para manter alinhamento perfeito em qualquer largura.
-        */}
         <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-          {/* Esquerda */}
           <div className="min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <span
@@ -357,7 +375,6 @@ export function MaquininhasForm() {
               </div>
             )}
 
-            {/* Só mostra Total quando quantidade > 1, evitando o "valor 3x" quando qty=1 */}
             {qty > 1 && (
               <div className="mt-2 text-sm text-white/70 tabular-nums">
                 Total ({qty} un.): <span className="text-white font-semibold">{formatBRL(total)}</span>
@@ -365,7 +382,6 @@ export function MaquininhasForm() {
             )}
           </div>
 
-          {/* Direita: preço unitário destacado */}
           <div className="text-right flex-shrink-0">
             <div className="font-semibold whitespace-nowrap tabular-nums">{formatBRL(unit)}</div>
             <div className="text-xs text-white/60 whitespace-nowrap">Unitário</div>
@@ -378,7 +394,6 @@ export function MaquininhasForm() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        {/* coluna principal */}
         <div className="xl:col-span-8 space-y-6">
           <SectionCard
             title="Dados do cliente e entrega"
@@ -419,7 +434,6 @@ export function MaquininhasForm() {
                 />
               </div>
 
-              {/* Endereço em campos */}
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-1">
                   <label className="block text-sm text-white/80 mb-2">
@@ -514,7 +528,10 @@ export function MaquininhasForm() {
                     value={formData.deliveryState}
                     onChange={(e) => {
                       editedRef.current.state = true;
-                      setFormData((p) => ({ ...p, deliveryState: e.target.value.toUpperCase().slice(0, 2) }));
+                      setFormData((p) => ({
+                        ...p,
+                        deliveryState: e.target.value.toUpperCase().slice(0, 2),
+                      }));
                     }}
                     className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 tabular-nums"
                     placeholder="SP"
@@ -535,7 +552,12 @@ export function MaquininhasForm() {
                   type="radio"
                   checked={formData.machineType === "subadquirente"}
                   onChange={() =>
-                    setFormData((p) => ({ ...p, machineType: "subadquirente", selectedMachine: "" }))
+                    setFormData((p) => ({
+                      ...p,
+                      machineType: "subadquirente",
+                      selectedMachine: "",
+                      pagSeguroEmail: "",
+                    }))
                   }
                 />
                 Sub
@@ -546,7 +568,12 @@ export function MaquininhasForm() {
                   type="radio"
                   checked={formData.machineType === "pagseguro"}
                   onChange={() =>
-                    setFormData((p) => ({ ...p, machineType: "pagseguro", selectedMachine: "" }))
+                    setFormData((p) => ({
+                      ...p,
+                      machineType: "pagseguro",
+                      selectedMachine: "",
+                      pagSeguroEmail: "",
+                    }))
                   }
                 />
                 PagSeguro
@@ -569,6 +596,23 @@ export function MaquininhasForm() {
               </div>
             </div>
 
+            {formData.machineType === "pagseguro" && (
+              <div className="mb-5">
+                <label className="block text-sm text-white/80 mb-2">
+                  E-mail PagSeguro <span className="text-red-400">*</span>
+                </label>
+                <input
+                  value={formData.pagSeguroEmail}
+                  onChange={(e) => setFormData((p) => ({ ...p, pagSeguroEmail: e.target.value }))}
+                  className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="email@pagseguro.com"
+                />
+                <div className="mt-1 text-xs text-white/50">
+                  Use o e-mail vinculado ao PagSeguro para validarmos o pedido.
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {machines.map((m) => (
                 <MachineCard key={m.name} m={m} />
@@ -577,7 +621,6 @@ export function MaquininhasForm() {
           </SectionCard>
         </div>
 
-        {/* resumo sticky */}
         <div className="xl:col-span-4 xl:sticky xl:top-24 space-y-6">
           <SectionCard title="Pagamento e resumo" subtitle="Revise o total antes de enviar.">
             <div className="flex flex-wrap gap-6 mb-4">
@@ -608,7 +651,10 @@ export function MaquininhasForm() {
                 <select
                   value={installmentsChosen}
                   onChange={(e) =>
-                    setFormData((p) => ({ ...p, installments: clampInstallments(Number(e.target.value)) }))
+                    setFormData((p) => ({
+                      ...p,
+                      installments: clampInstallments(Number(e.target.value)),
+                    }))
                   }
                   className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
