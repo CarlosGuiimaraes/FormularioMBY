@@ -13,7 +13,10 @@ const applicationTables = {
     customerName: v.string(),
     customerPhone: v.string(),
     customerEmail: v.optional(v.string()),
+
+    // Obrigatório no frontend quando machineType = "pagseguro"
     pagSeguroEmail: v.optional(v.string()),
+
     deliveryAddress: v.optional(v.string()),
 
     machineType: v.union(v.literal("pagseguro"), v.literal("subadquirente")),
@@ -23,7 +26,11 @@ const applicationTables = {
 
     paymentMethod: v.union(v.literal("avista"), v.literal("parcelado")),
     totalPrice: v.number(),
+
+    // Para parcelado: número de parcelas escolhido (2–12)
     installments: v.optional(v.number()),
+
+    // Parcela unitária (quando aplicável)
     installmentPrice: v.optional(v.number()),
 
     status: v.union(
