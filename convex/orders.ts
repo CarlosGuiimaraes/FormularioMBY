@@ -40,6 +40,7 @@ export const createOrder = mutation({
 
     paymentMethod: v.union(v.literal("avista"), v.literal("parcelado")),
     totalPrice: v.number(),
+
     installments: v.optional(v.number()),
     installmentPrice: v.optional(v.number()),
   },
@@ -53,6 +54,7 @@ export const createOrder = mutation({
     await ctx.db.insert("orders", {
       userId,
       userEmail,
+
       customerName: args.customerName,
       customerPhone: args.customerPhone,
       customerEmail: args.customerEmail,
