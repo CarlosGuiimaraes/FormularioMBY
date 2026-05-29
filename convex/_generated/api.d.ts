@@ -16,6 +16,8 @@ import type * as authInfo from "../authInfo.js";
 import type * as gmailSend from "../gmailSend.js";
 import type * as http from "../http.js";
 import type * as orders from "../orders.js";
+import type * as posConstants from "../posConstants.js";
+import type * as posOrders from "../posOrders.js";
 import type * as router from "../router.js";
 import type * as users from "../users.js";
 
@@ -34,6 +36,8 @@ declare const fullApi: ApiFromModules<{
   gmailSend: typeof gmailSend;
   http: typeof http;
   orders: typeof orders;
+  posConstants: typeof posConstants;
+  posOrders: typeof posOrders;
   router: typeof router;
   users: typeof users;
 }>;

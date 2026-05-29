@@ -7,6 +7,12 @@ import { SignInForm } from "./SignInForm";
 import { MaquininhasForm } from "./MaquininhasForm";
 import { OrdersList } from "./OrdersList";
 import { AdminPanel } from "./AdminPanel";
+import { POSForm } from "./POSForm";
+import { POSOrdersList } from "./POSOrdersList";
+import { POSAdminPanel } from "./POSAdminPanel";
+
+type AdminTab = "pedidos" | "admin" | "posadm";
+type FormTab = "maquininhas" | "pos";
 
 export default function App() {
   const authInfo = useQuery(api.auth.authInfo);
@@ -15,8 +21,8 @@ export default function App() {
 
   const isAdmin = !!authInfo?.isAdmin;
 
-  // Abas do topo (só admin vê)
-  const [activeTab, setActiveTab] = useState<"pedidos" | "admin">("pedidos");
+  const [adminTab, setAdminTab] = useState<AdminTab>("pedidos");
+  const [formTab, setFormTab] = useState<FormTab>("maquininhas");
 
   return (
     <div className="min-h-screen bg-[#0b0c10] text-white">
@@ -63,54 +69,95 @@ export default function App() {
             <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-8">
               <div className="max-w-3xl">
                 <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-                  Solicitação de Maquininhas
+                  {adminTab === "posadm"
+                    ? "POS — Painel ADM"
+                    : formTab === "pos"
+                      ? "Solicitação de POS"
+                      : "Solicitação de Maquininhas"}
                 </h1>
                 <p className="mt-3 text-white/70">
-                  Preencha os dados, escolha o modelo e finalize. O total (à vista ou parcelado) é calculado em tempo real.
+                  {adminTab === "posadm"
+                    ? "Visualize e gerencie pedidos de compra de terminal POS."
+                    : formTab === "pos"
+                      ? "Solicitação de compra de terminal POS. Limite de 5 por CNPJ/mês."
+                      : "Preencha os dados, escolha o modelo e finalize. O total é calculado em tempo real."}
                 </p>
               </div>
             </div>
           </section>
 
-          {/* Menu ADM separado */}
+          {/* Menu de abas — admin vê Pedidos / Painel ADM / POS ADM */}
           {isAdmin && (
             <section className="mb-6">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-2 flex gap-2">
-                <button
-                  className={[
-                    "flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition",
-                    activeTab === "pedidos"
-                      ? "bg-primary text-white"
-                      : "bg-black/20 text-white/70 hover:bg-black/30",
-                  ].join(" ")}
-                  onClick={() => setActiveTab("pedidos")}
-                >
-                  Pedidos
-                </button>
-
-                <button
-                  className={[
-                    "flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition",
-                    activeTab === "admin"
-                      ? "bg-primary text-white"
-                      : "bg-black/20 text-white/70 hover:bg-black/30",
-                  ].join(" ")}
-                  onClick={() => setActiveTab("admin")}
-                >
-                  Painel ADM
-                </button>
+                {(
+                  [
+                    { key: "pedidos", label: "Pedidos" },
+                    { key: "admin", label: "Painel ADM" },
+                    { key: "posadm", label: "POS ADM" },
+                  ] as { key: AdminTab; label: string }[]
+                ).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    className={[
+                      "flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition",
+                      adminTab === key
+                        ? "bg-primary text-white"
+                        : "bg-black/20 text-white/70 hover:bg-black/30",
+                    ].join(" ")}
+                    onClick={() => setAdminTab(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </section>
           )}
 
-          {/* Conteúdo por aba */}
-          {isAdmin && activeTab === "admin" ? (
+          {/* Conteúdo */}
+          {isAdmin && adminTab === "admin" ? (
             <AdminPanel />
+          ) : isAdmin && adminTab === "posadm" ? (
+            <POSAdminPanel />
           ) : (
-            <section className="space-y-6">
-              <MaquininhasForm />
-              <OrdersList isAdmin={isAdmin} />
-            </section>
+            <>
+              {/* Tabs de formulário: Maquininhas | POS — visíveis para todos */}
+              <section className="mb-6">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-2 flex gap-2">
+                  {(
+                    [
+                      { key: "maquininhas", label: "Maquininhas" },
+                      { key: "pos", label: "POS" },
+                    ] as { key: FormTab; label: string }[]
+                  ).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      className={[
+                        "flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition",
+                        formTab === key
+                          ? "bg-primary text-white"
+                          : "bg-black/20 text-white/70 hover:bg-black/30",
+                      ].join(" ")}
+                      onClick={() => setFormTab(key)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {formTab === "maquininhas" ? (
+                <section className="space-y-6">
+                  <MaquininhasForm />
+                  <OrdersList isAdmin={isAdmin} />
+                </section>
+              ) : (
+                <section className="space-y-6">
+                  <POSForm />
+                  <POSOrdersList />
+                </section>
+              )}
+            </>
           )}
         </Authenticated>
       </main>

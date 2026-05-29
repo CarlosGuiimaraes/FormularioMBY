@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
+import { posModelValidator } from "./posConstants";
 
 const applicationTables = {
   orders: defineTable({
@@ -42,6 +43,55 @@ const applicationTables = {
 
     whatsappSent: v.boolean(),
   }).index("by_userId", ["userId"]),
+
+  posOrders: defineTable({
+    // Rastreamento de usuário (mesmo padrão de orders)
+    userId: v.optional(v.id("users")),
+    userEmail: v.optional(v.string()),
+
+    // Identificação da empresa (armazenados apenas com dígitos)
+    cnpj: v.string(),
+    responsibleCpf: v.string(),
+    companyName: v.string(),
+
+    // Contato
+    pagSeguroEmail: v.string(),
+    contactEmail: v.string(),
+    phone: v.string(),
+
+    // Endereço (campos separados; CEP armazenado apenas com dígitos)
+    cep: v.string(),
+    street: v.string(),
+    number: v.string(),
+    complement: v.optional(v.string()),
+    district: v.string(),
+    city: v.string(),
+    state: v.string(),
+
+    // Produto
+    model: posModelValidator,
+    quantity: v.number(),
+    purchaseType: v.literal("compra"),
+
+    // Resultado do envio ao Monday/Paytime
+    submissionResult: v.union(
+      v.literal("not_sent"),
+      v.literal("sent"),
+      v.literal("error"),
+    ),
+
+    // Payload e resposta do Monday (estrutura para futura integração)
+    mondayPayload: v.optional(v.any()),
+    mondayResponse: v.optional(v.any()),
+    mondayError: v.optional(v.string()),
+    submittedAt: v.optional(v.number()),
+
+    // Timestamps próprios (além do _creationTime do Convex)
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_cnpj", ["cnpj"]),
 };
 
 export default defineSchema({
