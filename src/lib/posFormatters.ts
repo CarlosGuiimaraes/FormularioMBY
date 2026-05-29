@@ -57,6 +57,21 @@ export function formatPhone(digits: string): string {
   return digits;
 }
 
+// Máscara dinâmica: CPF se ≤11 dígitos, CNPJ se >11
+export function maskCpfCnpj(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 11) return maskCpf(d);
+  return maskCnpj(d);
+}
+
+// Formata para exibição baseado no comprimento
+export function formatCpfCnpj(digits: string): string {
+  const d = digits.replace(/\D/g, "");
+  if (d.length === 11) return formatCpf(d);
+  if (d.length === 14) return formatCnpj(d);
+  return digits;
+}
+
 export function formatFullAddress(o: {
   street: string;
   number: string;

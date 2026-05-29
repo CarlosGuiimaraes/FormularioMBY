@@ -19,6 +19,10 @@ export type PosModel =
   | "Moderninha ProFit"
   | "Moderninha Wifi Plus 2";
 
+// E-mail interno fixo que recebe os pedidos no Monday/Paytime.
+// Nunca exposto ao cliente — sempre usado no campo e_mail do payload.
+export const INTERNAL_CONTACT_EMAIL = "gerente@makeyourbank.com.br";
+
 export const POS_MODELS: PosModel[] = [
   "Moderninha Pro 2",
   "Moderninha Smart 2",

@@ -49,9 +49,10 @@ const applicationTables = {
     userId: v.optional(v.id("users")),
     userEmail: v.optional(v.string()),
 
-    // Identificação da empresa (armazenados apenas com dígitos)
+    // Documento da empresa: CPF (11 dígitos) ou CNPJ (14 dígitos), somente números.
+    // responsibleCpf mantido como opcional para compatibilidade com registros antigos.
     cnpj: v.string(),
-    responsibleCpf: v.string(),
+    responsibleCpf: v.optional(v.string()),
     companyName: v.string(),
 
     // Contato

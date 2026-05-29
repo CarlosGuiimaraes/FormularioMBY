@@ -3,14 +3,12 @@ import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { toast } from "sonner";
 import { POS_MODELS, PosModel } from "../convex/posConstants";
-import { maskCnpj, maskCpf, maskCep, maskPhone } from "./lib/posFormatters";
+import { maskCpfCnpj, maskCep, maskPhone } from "./lib/posFormatters";
 
 type FormState = {
   cnpj: string;
-  responsibleCpf: string;
   companyName: string;
   pagSeguroEmail: string;
-  contactEmail: string;
   phone: string;
   cep: string;
   street: string;
@@ -25,10 +23,8 @@ type FormState = {
 
 const EMPTY: FormState = {
   cnpj: "",
-  responsibleCpf: "",
   companyName: "",
   pagSeguroEmail: "",
-  contactEmail: "",
   phone: "",
   cep: "",
   street: "",
@@ -77,15 +73,15 @@ export function POSForm() {
     e.preventDefault();
 
     const cnpjDigits = form.cnpj.replace(/\D/g, "");
-    const cpfDigits = form.responsibleCpf.replace(/\D/g, "");
     const cepDigits = form.cep.replace(/\D/g, "");
     const phoneDigits = form.phone.replace(/\D/g, "");
 
-    if (cnpjDigits.length !== 14) { toast.error("CNPJ deve ter 14 dígitos."); return; }
-    if (cpfDigits.length !== 11) { toast.error("CPF deve ter 11 dígitos."); return; }
+    if (cnpjDigits.length !== 11 && cnpjDigits.length !== 14) {
+      toast.error("Documento inválido. Informe CPF (11 dígitos) ou CNPJ (14 dígitos).");
+      return;
+    }
     if (!form.companyName.trim()) { toast.error("Razão Social é obrigatória."); return; }
     if (!form.pagSeguroEmail.trim()) { toast.error("E-mail PagSeguro é obrigatório."); return; }
-    if (!form.contactEmail.trim()) { toast.error("E-mail de contato é obrigatório."); return; }
     if (phoneDigits.length < 10) { toast.error("Telefone inválido."); return; }
     if (cepDigits.length !== 8) { toast.error("CEP deve ter 8 dígitos."); return; }
     if (!form.street.trim()) { toast.error("Logradouro é obrigatório."); return; }
@@ -104,10 +100,8 @@ export function POSForm() {
     try {
       await createPosOrder({
         cnpj: cnpjDigits,
-        responsibleCpf: cpfDigits,
         companyName: form.companyName.trim(),
         pagSeguroEmail: form.pagSeguroEmail.trim(),
-        contactEmail: form.contactEmail.trim(),
         phone: phoneDigits,
         cep: cepDigits,
         street: form.street.trim(),
@@ -134,39 +128,27 @@ export function POSForm() {
       <div>
         <h2 className="text-lg font-semibold tracking-tight">Solicitação de POS</h2>
         <p className="text-sm text-white/60 mt-1">
-          Compra de terminal POS. Limite: 5 unidades por CNPJ/mês.
+          Compra de terminal POS. Limite: 5 unidades por CPF/CNPJ por mês.
         </p>
       </div>
 
       {/* Dados da empresa */}
       <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-          Dados da Empresa
-        </div>
+        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Dados da Empresa</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="CNPJ" required>
+          <Field label="CPF / CNPJ" required>
             <input
               className={inputCls}
-              placeholder="00.000.000/0000-00"
+              placeholder="000.000.000-00 ou 00.000.000/0000-00"
               value={form.cnpj}
-              onChange={(e) => set("cnpj", maskCnpj(e.target.value))}
-              inputMode="numeric"
-            />
-          </Field>
-
-          <Field label="CPF do Responsável" required>
-            <input
-              className={inputCls}
-              placeholder="000.000.000-00"
-              value={form.responsibleCpf}
-              onChange={(e) => set("responsibleCpf", maskCpf(e.target.value))}
+              onChange={(e) => set("cnpj", maskCpfCnpj(e.target.value))}
               inputMode="numeric"
             />
           </Field>
 
           <Field label="Razão Social / Nome da Empresa" required>
             <input
-              className={`${inputCls} sm:col-span-2`}
+              className={inputCls}
               placeholder="Nome da empresa"
               value={form.companyName}
               onChange={(e) => set("companyName", e.target.value)}
@@ -177,9 +159,7 @@ export function POSForm() {
 
       {/* Contato */}
       <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-          Contato
-        </div>
+        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Contato</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="E-mail cadastro PagSeguro" required>
             <input
@@ -188,16 +168,6 @@ export function POSForm() {
               placeholder="email@empresa.com"
               value={form.pagSeguroEmail}
               onChange={(e) => set("pagSeguroEmail", e.target.value)}
-            />
-          </Field>
-
-          <Field label="E-mail de contato" required>
-            <input
-              className={inputCls}
-              type="email"
-              placeholder="contato@empresa.com"
-              value={form.contactEmail}
-              onChange={(e) => set("contactEmail", e.target.value)}
             />
           </Field>
 
@@ -215,9 +185,7 @@ export function POSForm() {
 
       {/* Endereço */}
       <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-          Endereço de Entrega
-        </div>
+        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Endereço de Entrega</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="CEP" required>
             <input
@@ -288,9 +256,7 @@ export function POSForm() {
 
       {/* Produto */}
       <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-          Produto
-        </div>
+        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Produto</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Modelo" required>
             <select
@@ -300,9 +266,7 @@ export function POSForm() {
             >
               <option value="">Selecione o modelo</option>
               {POS_MODELS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
+                <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </Field>
@@ -325,7 +289,7 @@ export function POSForm() {
         </div>
 
         <p className="text-xs text-white/50">
-          Tipo: Compra — Limite de 5 POS por CNPJ por mês (acumulado entre pedidos).
+          Tipo: Compra — Limite de 5 POS por CPF/CNPJ por mês.
         </p>
       </div>
 
