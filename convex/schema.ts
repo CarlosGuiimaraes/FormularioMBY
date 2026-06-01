@@ -4,46 +4,6 @@ import { authTables } from "@convex-dev/auth/server";
 import { posModelValidator } from "./posConstants";
 
 const applicationTables = {
-  orders: defineTable({
-    // Identifica o usuário autenticado (inclui login anônimo).
-    // Optional para não quebrar registros legados já existentes na tabela.
-    userId: v.optional(v.id("users")),
-    // Email do usuário autenticado (quando disponível). Útil para auditoria/admin.
-    userEmail: v.optional(v.string()),
-
-    customerName: v.string(),
-    customerPhone: v.string(),
-    customerEmail: v.optional(v.string()),
-
-    // Obrigatório no frontend quando machineType = "pagseguro"
-    pagSeguroEmail: v.optional(v.string()),
-
-    deliveryAddress: v.optional(v.string()),
-
-    machineType: v.union(v.literal("pagseguro"), v.literal("subadquirente")),
-    selectedMachine: v.string(),
-
-    quantity: v.number(),
-
-    paymentMethod: v.union(v.literal("avista"), v.literal("parcelado")),
-    totalPrice: v.number(),
-
-    // Para parcelado: número de parcelas escolhido (2–12)
-    installments: v.optional(v.number()),
-
-    // Parcela unitária (quando aplicável)
-    installmentPrice: v.optional(v.number()),
-
-    status: v.union(
-      v.literal("pending"),
-      v.literal("sent"),
-      v.literal("completed"),
-      v.literal("cancelled"),
-    ),
-
-    whatsappSent: v.boolean(),
-  }).index("by_userId", ["userId"]),
-
   posOrders: defineTable({
     // Rastreamento de usuário (mesmo padrão de orders)
     userId: v.optional(v.id("users")),
@@ -69,6 +29,9 @@ const applicationTables = {
     city: v.string(),
     state: v.string(),
 
+    // Credenciadora / White Label que realizou o pedido
+    whiteLabel: v.optional(v.string()),
+
     // Produto
     model: posModelValidator,
     quantity: v.number(),
@@ -90,9 +53,13 @@ const applicationTables = {
     // Timestamps próprios (além do _creationTime do Convex)
     createdAt: v.number(),
     updatedAt: v.number(),
+
+    // ID do pedido de origem (orders legado), mantido como referência histórica
+    migratedFromOrderId: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
-    .index("by_cnpj", ["cnpj"]),
+    .index("by_cnpj", ["cnpj"])
+    .index("by_createdAt", ["createdAt"]),
 };
 
 export default defineSchema({

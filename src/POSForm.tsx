@@ -8,6 +8,7 @@ import { maskCpfCnpj, maskCep, maskPhone } from "./lib/posFormatters";
 type FormState = {
   cnpj: string;
   companyName: string;
+  whiteLabel: string;
   pagSeguroEmail: string;
   phone: string;
   cep: string;
@@ -24,6 +25,7 @@ type FormState = {
 const EMPTY: FormState = {
   cnpj: "",
   companyName: "",
+  whiteLabel: "",
   pagSeguroEmail: "",
   phone: "",
   cep: "",
@@ -37,6 +39,15 @@ const EMPTY: FormState = {
   quantity: "1",
 };
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <div className="h-4 w-0.5 rounded-full bg-primary" />
+      <span className="text-xs font-bold text-primary uppercase tracking-widest">{children}</span>
+    </div>
+  );
+}
+
 function Field({
   label,
   required,
@@ -48,9 +59,9 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-white/70">
+      <label className="text-xs font-semibold text-[#5D5E60]">
         {label}
-        {required && <span className="ml-1 text-red-400">*</span>}
+        {required && <span className="ml-1 text-primary">*</span>}
       </label>
       {children}
     </div>
@@ -58,15 +69,43 @@ function Field({
 }
 
 const inputCls =
-  "rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#222222] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition";
 
 export function POSForm() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
   const createPosOrder = useMutation(api.posOrders.createPosOrder);
 
   function set(field: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleCepChange(masked: string) {
+    set("cep", masked);
+    const digits = masked.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        street: data.logradouro ?? prev.street,
+        district: data.bairro ?? prev.district,
+        city: data.localidade ?? prev.city,
+        state: data.uf ?? prev.state,
+      }));
+    } catch {
+      toast.error("Não foi possível buscar o CEP.");
+    } finally {
+      setCepLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -81,6 +120,7 @@ export function POSForm() {
       return;
     }
     if (!form.companyName.trim()) { toast.error("Razão Social é obrigatória."); return; }
+    if (!form.whiteLabel.trim()) { toast.error("Credenciadora / WL é obrigatória."); return; }
     if (!form.pagSeguroEmail.trim()) { toast.error("E-mail PagSeguro é obrigatório."); return; }
     if (phoneDigits.length < 10) { toast.error("Telefone inválido."); return; }
     if (cepDigits.length !== 8) { toast.error("CEP deve ter 8 dígitos."); return; }
@@ -101,6 +141,7 @@ export function POSForm() {
       await createPosOrder({
         cnpj: cnpjDigits,
         companyName: form.companyName.trim(),
+        whiteLabel: form.whiteLabel.trim(),
         pagSeguroEmail: form.pagSeguroEmail.trim(),
         phone: phoneDigits,
         cep: cepDigits,
@@ -124,17 +165,30 @@ export function POSForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">Solicitação de POS</h2>
-        <p className="text-sm text-white/60 mt-1">
-          Compra de terminal POS. Limite: 5 unidades por CPF/CNPJ por mês.
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white shadow-card p-6 space-y-6">
+      <div className="border-b border-gray-100 pb-4">
+        <h2 className="text-lg font-bold text-[#222222] tracking-tight">Solicitação de POS</h2>
+        <p className="text-sm text-[#5D5E60] mt-0.5">
+          Compra de terminal POS — limite de 5 unidades por CPF/CNPJ por mês.
         </p>
       </div>
 
+      {/* White Label */}
+      <div>
+        <SectionLabel>Dados do White Label / Credenciadora</SectionLabel>
+        <Field label="Credenciadora / White Label" required>
+          <input
+            className={inputCls}
+            placeholder="Nome da credenciadora ou White Label"
+            value={form.whiteLabel}
+            onChange={(e) => set("whiteLabel", e.target.value)}
+          />
+        </Field>
+      </div>
+
       {/* Dados da empresa */}
-      <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Dados da Empresa</div>
+      <div>
+        <SectionLabel>Dados da Empresa</SectionLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="CPF / CNPJ" required>
             <input
@@ -145,7 +199,6 @@ export function POSForm() {
               inputMode="numeric"
             />
           </Field>
-
           <Field label="Razão Social / Nome da Empresa" required>
             <input
               className={inputCls}
@@ -158,8 +211,8 @@ export function POSForm() {
       </div>
 
       {/* Contato */}
-      <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Contato</div>
+      <div>
+        <SectionLabel>Contato</SectionLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="E-mail cadastro PagSeguro" required>
             <input
@@ -170,7 +223,6 @@ export function POSForm() {
               onChange={(e) => set("pagSeguroEmail", e.target.value)}
             />
           </Field>
-
           <Field label="Telefone" required>
             <input
               className={inputCls}
@@ -184,19 +236,26 @@ export function POSForm() {
       </div>
 
       {/* Endereço */}
-      <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Endereço de Entrega</div>
+      <div>
+        <SectionLabel>Endereço de Entrega</SectionLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="CEP" required>
-            <input
-              className={inputCls}
-              placeholder="00000-000"
-              value={form.cep}
-              onChange={(e) => set("cep", maskCep(e.target.value))}
-              inputMode="numeric"
-            />
+            <div className="relative">
+              <input
+                className={inputCls}
+                placeholder="00000-000"
+                value={form.cep}
+                onChange={(e) => handleCepChange(maskCep(e.target.value))}
+                inputMode="numeric"
+                disabled={cepLoading}
+              />
+              {cepLoading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-semibold animate-pulse">
+                  buscando...
+                </div>
+              )}
+            </div>
           </Field>
-
           <Field label="Logradouro" required>
             <input
               className={inputCls}
@@ -205,7 +264,6 @@ export function POSForm() {
               onChange={(e) => set("street", e.target.value)}
             />
           </Field>
-
           <Field label="Número" required>
             <input
               className={inputCls}
@@ -214,7 +272,6 @@ export function POSForm() {
               onChange={(e) => set("number", e.target.value)}
             />
           </Field>
-
           <Field label="Complemento">
             <input
               className={inputCls}
@@ -223,7 +280,6 @@ export function POSForm() {
               onChange={(e) => set("complement", e.target.value)}
             />
           </Field>
-
           <Field label="Bairro" required>
             <input
               className={inputCls}
@@ -232,7 +288,6 @@ export function POSForm() {
               onChange={(e) => set("district", e.target.value)}
             />
           </Field>
-
           <Field label="Cidade" required>
             <input
               className={inputCls}
@@ -241,7 +296,6 @@ export function POSForm() {
               onChange={(e) => set("city", e.target.value)}
             />
           </Field>
-
           <Field label="UF" required>
             <input
               className={inputCls}
@@ -255,8 +309,8 @@ export function POSForm() {
       </div>
 
       {/* Produto */}
-      <div className="space-y-3">
-        <div className="text-xs font-semibold text-white/40 uppercase tracking-widest">Produto</div>
+      <div>
+        <SectionLabel>Produto</SectionLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Modelo" required>
             <select
@@ -270,7 +324,6 @@ export function POSForm() {
               ))}
             </select>
           </Field>
-
           <Field label="Quantidade (máx. 5 por pedido)" required>
             <input
               className={inputCls}
@@ -287,16 +340,13 @@ export function POSForm() {
             />
           </Field>
         </div>
-
-        <p className="text-xs text-white/50">
-          Tipo: Compra — Limite de 5 POS por CPF/CNPJ por mês.
-        </p>
+        <p className="text-xs text-[#5D5E60] mt-2">Tipo: Compra — Limite de 5 POS por CPF/CNPJ por mês.</p>
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-2xl bg-primary px-6 py-3 font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition"
+        className="w-full rounded-xl bg-primary px-6 py-3 font-bold text-white hover:bg-primary-hover disabled:opacity-50 transition shadow-sm"
       >
         {loading ? "Enviando..." : "Enviar Pedido POS"}
       </button>

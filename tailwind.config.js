@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter var", ...fontFamily.sans],
+        sans: ["Montserrat", ...fontFamily.sans],
       },
       borderRadius: {
         DEFAULT: "8px",
@@ -14,21 +14,26 @@ module.exports = {
         container: "12px",
       },
       boxShadow: {
-        DEFAULT: "0 1px 4px rgba(0, 0, 0, 0.1)",
-        hover: "0 2px 8px rgba(0, 0, 0, 0.12)",
+        DEFAULT: "0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)",
+        hover: "0 4px 12px rgba(0,0,0,0.10)",
+        card: "0 1px 3px rgba(0,0,0,0.06)",
       },
       colors: {
         primary: {
-          DEFAULT: "#4F46E5",
-          hover: "#4338CA",
+          DEFAULT: "#008DD0",
+          hover: "#0079B5",
         },
         secondary: {
-          DEFAULT: "#6B7280",
-          hover: "#4B5563",
+          DEFAULT: "#EE8220",
+          hover: "#D4721C",
         },
         accent: {
-          DEFAULT: "#8B5CF6",
-          hover: "#7C3AED",
+          DEFAULT: "#4DBBA0",
+          hover: "#3DA88E",
+        },
+        brand: {
+          gray: "#5D5E60",
+          dark: "#222222",
         },
       },
       spacing: {

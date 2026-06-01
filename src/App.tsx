@@ -4,49 +4,46 @@ import { api } from "../convex/_generated/api";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { SignInForm } from "./SignInForm";
-import { MaquininhasForm } from "./MaquininhasForm";
-import { OrdersList } from "./OrdersList";
-import { AdminPanel } from "./AdminPanel";
 import { POSForm } from "./POSForm";
 import { POSOrdersList } from "./POSOrdersList";
 import { POSAdminPanel } from "./POSAdminPanel";
 
-type AdminTab = "pedidos" | "admin" | "posadm";
-type FormTab = "maquininhas" | "pos";
+type AdminTab = "painel" | "novo";
 
 export default function App() {
   const authInfo = useQuery(api.auth.authInfo);
   const loggedInUser = useQuery(api.users.getMe);
   const { signOut } = useAuthActions();
+  const [adminTab, setAdminTab] = useState<AdminTab>("painel");
 
   const isAdmin = !!authInfo?.isAdmin;
 
-  const [adminTab, setAdminTab] = useState<AdminTab>("pedidos");
-  const [formTab, setFormTab] = useState<FormTab>("maquininhas");
-
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur">
-        <div className="mx-auto w-full max-w-[920px] px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F5F6F8] text-[#222222]">
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
+        <div className="mx-auto w-full max-w-[960px] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-primary/25 border border-primary/30" />
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="h-2 w-2 rounded-full bg-primary" />
+              <div className="h-2 w-2 rounded-full bg-secondary" />
+              <div className="h-2 w-2 rounded-full bg-accent" />
+            </div>
             <div className="min-w-0">
-              <div className="font-semibold tracking-tight truncate">Pedido de Maquininhas</div>
-              <div className="text-xs text-white/60 truncate">
+              <div className="font-bold tracking-tight text-[#222222] truncate">Make Your Bank</div>
+              <div className="text-xs text-[#5D5E60] truncate">
                 {loggedInUser?.email ?? authInfo?.email ?? ""}
               </div>
             </div>
-
             {isAdmin && (
-              <span className="ml-2 hidden sm:inline-flex text-[11px] px-2 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary">
-                Admin
+              <span className="ml-1 hidden sm:inline-flex text-[10px] px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary font-semibold tracking-wide">
+                ADM
               </span>
             )}
           </div>
 
           <Authenticated>
             <button
-              className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm"
+              className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm text-[#5D5E60] font-medium transition"
               onClick={() => void signOut()}
             >
               Sair
@@ -55,46 +52,26 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[920px] px-4 py-10">
+      <main className="mx-auto w-full max-w-[960px] px-4 py-8">
         <Unauthenticated>
-          <div className="max-w-md mx-auto bg-white/5 p-6 rounded-2xl border border-white/10">
-            <h1 className="text-2xl font-semibold mb-2">Acesso</h1>
-            <p className="text-white/70 mb-6">Faça login para enviar o pedido.</p>
+          <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-gray-200 shadow-card">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="h-8 w-1 rounded-full bg-primary" />
+              <h1 className="text-xl font-bold text-[#222222]">Acesso ao Portal</h1>
+            </div>
+            <p className="text-[#5D5E60] mb-6 text-sm">Faça login para acessar o sistema de pedidos POS.</p>
             <SignInForm />
           </div>
         </Unauthenticated>
 
         <Authenticated>
-          <section className="mb-6">
-            <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-8">
-              <div className="max-w-3xl">
-                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-                  {adminTab === "posadm"
-                    ? "POS — Painel ADM"
-                    : formTab === "pos"
-                      ? "Solicitação de POS"
-                      : "Solicitação de Maquininhas"}
-                </h1>
-                <p className="mt-3 text-white/70">
-                  {adminTab === "posadm"
-                    ? "Visualize e gerencie pedidos de compra de terminal POS."
-                    : formTab === "pos"
-                      ? "Solicitação de compra de terminal POS. Limite de 5 por CNPJ/mês."
-                      : "Preencha os dados, escolha o modelo e finalize. O total é calculado em tempo real."}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Menu de abas — admin vê Pedidos / Painel ADM / POS ADM */}
-          {isAdmin && (
-            <section className="mb-6">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-2 flex gap-2">
+          {isAdmin ? (
+            <>
+              <div className="mb-6 bg-white rounded-2xl border border-gray-200 shadow-card p-1.5 flex gap-1.5">
                 {(
                   [
-                    { key: "pedidos", label: "Pedidos" },
-                    { key: "admin", label: "Painel ADM" },
-                    { key: "posadm", label: "POS ADM" },
+                    { key: "painel", label: "POS ADM" },
+                    { key: "novo",   label: "Novo Pedido" },
                   ] as { key: AdminTab; label: string }[]
                 ).map(({ key, label }) => (
                   <button
@@ -102,8 +79,8 @@ export default function App() {
                     className={[
                       "flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition",
                       adminTab === key
-                        ? "bg-primary text-white"
-                        : "bg-black/20 text-white/70 hover:bg-black/30",
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-[#5D5E60] hover:bg-gray-100",
                     ].join(" ")}
                     onClick={() => setAdminTab(key)}
                   >
@@ -111,59 +88,38 @@ export default function App() {
                   </button>
                 ))}
               </div>
-            </section>
-          )}
 
-          {/* Conteúdo */}
-          {isAdmin && adminTab === "admin" ? (
-            <AdminPanel />
-          ) : isAdmin && adminTab === "posadm" ? (
-            <POSAdminPanel />
-          ) : (
-            <>
-              {/* Tabs de formulário: Maquininhas | POS — visíveis para todos */}
-              <section className="mb-6">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-2 flex gap-2">
-                  {(
-                    [
-                      { key: "maquininhas", label: "Maquininhas" },
-                      { key: "pos", label: "POS" },
-                    ] as { key: FormTab; label: string }[]
-                  ).map(({ key, label }) => (
-                    <button
-                      key={key}
-                      className={[
-                        "flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition",
-                        formTab === key
-                          ? "bg-primary text-white"
-                          : "bg-black/20 text-white/70 hover:bg-black/30",
-                      ].join(" ")}
-                      onClick={() => setFormTab(key)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              {formTab === "maquininhas" ? (
-                <section className="space-y-6">
-                  <MaquininhasForm />
-                  <OrdersList isAdmin={isAdmin} />
-                </section>
+              {adminTab === "painel" ? (
+                <POSAdminPanel />
               ) : (
-                <section className="space-y-6">
+                <section className="space-y-5">
                   <POSForm />
                   <POSOrdersList />
                 </section>
               )}
             </>
+          ) : (
+            <section className="space-y-5">
+              <div className="rounded-2xl border border-gray-200 bg-white shadow-card px-8 py-7">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="h-8 w-1 rounded-full bg-primary flex-shrink-0" />
+                  <h1 className="text-2xl sm:text-3xl font-bold text-[#222222] tracking-tight">
+                    Solicitação de POS
+                  </h1>
+                </div>
+                <p className="text-[#5D5E60] text-sm ml-4 pl-3">
+                  Solicitação de compra de terminal POS. Limite de 5 por CNPJ/mês.
+                </p>
+              </div>
+              <POSForm />
+              <POSOrdersList />
+            </section>
           )}
         </Authenticated>
       </main>
 
-      <footer className="border-t border-white/10 py-6 text-center text-xs text-white/50">
-        Make Your Bank • Formulário interno
+      <footer className="border-t border-gray-200 bg-white py-5 text-center text-xs text-[#5D5E60]">
+        Make Your Bank &copy; {new Date().getFullYear()} — Sistema interno
       </footer>
     </div>
   );

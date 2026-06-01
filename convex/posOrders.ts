@@ -37,6 +37,7 @@ export const createPosOrder = mutation({
     // cnpj aceita CPF (11 dígitos) ou CNPJ (14 dígitos) — campo unificado
     cnpj: v.string(),
     companyName: v.string(),
+    whiteLabel: v.string(),
     pagSeguroEmail: v.string(),
     phone: v.string(),
     cep: v.string(),
@@ -93,6 +94,7 @@ export const createPosOrder = mutation({
       userEmail,
       cnpj,
       companyName: args.companyName.trim(),
+      whiteLabel: args.whiteLabel.trim(),
       pagSeguroEmail: args.pagSeguroEmail.trim().toLowerCase(),
       contactEmail: INTERNAL_CONTACT_EMAIL,
       phone,
@@ -141,7 +143,7 @@ export const listAllPosOrders = query({
     await requireAdmin(ctx);
 
     const limit = args.limit ?? 50;
-    let q = ctx.db.query("posOrders").order("desc");
+    let q = ctx.db.query("posOrders").withIndex("by_createdAt").order("desc");
 
     if (args.submissionResult) {
       q = q.filter((f: any) => f.eq(f.field("submissionResult"), args.submissionResult));
@@ -153,7 +155,7 @@ export const listAllPosOrders = query({
       const s = args.search.toLowerCase();
       return rows.filter((o: any) => {
         const hay =
-          `${o.companyName} ${o.cnpj} ${o.contactEmail} ${o.pagSeguroEmail} ${o.phone} ${o.model} ${o.city} ${o.state}`.toLowerCase();
+          `${o.companyName} ${o.cnpj} ${o.contactEmail} ${o.pagSeguroEmail} ${o.phone} ${o.model} ${o.city} ${o.state} ${o.whiteLabel ?? ""}`.toLowerCase();
         return hay.includes(s);
       });
     }
@@ -167,6 +169,7 @@ export const updatePosOrder = mutation({
     orderId: v.id("posOrders"),
     cnpj: v.string(),
     companyName: v.string(),
+    whiteLabel: v.optional(v.string()),
     pagSeguroEmail: v.string(),
     phone: v.string(),
     cep: v.string(),
@@ -199,6 +202,7 @@ export const updatePosOrder = mutation({
     await ctx.db.patch(args.orderId, {
       cnpj,
       companyName: args.companyName.trim(),
+      whiteLabel: args.whiteLabel?.trim() || undefined,
       pagSeguroEmail: args.pagSeguroEmail.trim().toLowerCase(),
       phone,
       cep,

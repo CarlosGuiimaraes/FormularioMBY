@@ -38,7 +38,8 @@ export function formatCnpj(digits: string): string {
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
 }
 
-export function formatCpf(digits: string): string {
+export function formatCpf(digits: string | undefined): string {
+  if (!digits) return "—";
   const d = digits.replace(/\D/g, "");
   if (d.length !== 11) return digits;
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
